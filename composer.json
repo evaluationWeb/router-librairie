@@ -3,6 +3,16 @@
     "description": "Lightweight PHP routing library with configurable authorization and controller resolution.",
     "type": "library",
     "license": "MIT",
+    "homepage": "https://github.com/evaluationWeb/router-librairie",
+    "support": {
+        "issues": "https://github.com/evaluationWeb/router-librairie/issues",
+        "source": "https://github.com/evaluationWeb/router-librairie"
+    },
+    "authors": [
+        {
+            "name": "mithridatem"
+        }
+    ],
     "keywords": ["router", "routing", "http"],
     "require": {
         "php": "^8.1"
