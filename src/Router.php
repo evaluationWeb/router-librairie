@@ -87,13 +87,13 @@ class Router
         $match = $this->routes->match($context->getMethod(), $path);
 
         if ($match === null) {
-            throw new RouteNotFoundException(sprintf('No route found for %s %s', $context->getMethod(), $path));
+            throw new RouteNotFoundException(sprintf('No route found for %s %s', $context->getMethod(), $path), 404);
         }
 
         $route = $match->getRoute();
 
         if (!$this->grantChecker->isGranted($route->getGrants())) {
-            throw new UnauthorizedException('Access denied for this route.');
+            throw new UnauthorizedException('Access denied for this route.', 403);
         }
 
         $handler = $route->getHandler();
