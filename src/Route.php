@@ -96,18 +96,37 @@ class Route
         return array_replace($this->defaultParameters, $parameters);
     }
 
+    public function matchesPath(string $path): bool
+    {
+        return preg_match($this->regex, $this->normalizePath($path)) === 1;
+    }
+
     private function compilePattern(): void
     {
         $this->parameterNames = [];
+        $regex = '';
+        $offset = 0;
+        preg_match_all('/\\{([a-zA-Z_][a-zA-Z0-9_]*)\\}|\\/\\*/', $this->path, $tokens, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
 
-        $pattern = preg_replace_callback('/\{([a-zA-Z_][a-zA-Z0-9_-]*)\}/', function (array $matches) {
-            $this->parameterNames[] = $matches[1];
+        foreach ($tokens as $token) {
+            $literal = substr($this->path, $offset, $token[0][1] - $offset);
+            $regex .= preg_quote($literal, '#');
 
-            return '(?P<' . $matches[1] . '>[^/]+)';
-        }, $this->path);
+            if ($token[0][0] === '/*') {
+                $regex .= '/.*';
+            } else {
+                $name = $token[1][0];
+                if (in_array($name, $this->parameterNames, true)) {
+                    throw new \\InvalidArgumentException('Duplicate route parameter: ' . $name);
+                }
+                $this->parameterNames[] = $name;
+                $regex .= '(?P<' . $name . '>[^/]+)';
+            }
+            $offset = $token[0][1] + strlen($token[0][0]);
+        }
 
-        $pattern = str_replace('/*', '/.*', $pattern ?? $this->path);
-        $this->regex = '#^' . $pattern . '$#';
+        $regex .= preg_quote(substr($this->path, $offset), '#');
+        $this->regex = '#^' . $regex . '$#D';
     }
 
     private function normalizePath(string $path): string
