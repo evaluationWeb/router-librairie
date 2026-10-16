@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Mithridatem\Routing\Loader;
 
 use Mithridatem\Routing\Attribute\Route as RouteAttribute;
+use Mithridatem\Routing\Discovery\ControllerDiscovery;
 use Mithridatem\Routing\Handler\ControllerReference;
 use Mithridatem\Routing\Route;
 use Mithridatem\Routing\Router;
@@ -50,4 +51,16 @@ final class AttributeRouteLoader
             $this->loadController($router, $controllerClass);
         }
     }
+    /**
+     * Discover PSR-4 classes in a directory and register their route attributes.
+     *
+     * @param string $directory Absolute or relative filesystem path.
+     * @param string $namespace Namespace corresponding to the directory.
+     */
+    public function loadDirectory(Router $router, string $directory, string $namespace): void
+    {
+        $classes = (new ControllerDiscovery())->discover($directory, $namespace);
+        $this->loadControllers($router, $classes);
+    }
+
 }
