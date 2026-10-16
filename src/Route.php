@@ -117,7 +117,7 @@ class Route
             } else {
                 $name = $token[1][0];
                 if (in_array($name, $this->parameterNames, true)) {
-                    throw new \\InvalidArgumentException('Duplicate route parameter: ' . $name);
+                    throw new \InvalidArgumentException('Duplicate route parameter: ' . $name);
                 }
                 $this->parameterNames[] = $name;
                 $regex .= '(?P<' . $name . '>[^/]+)';
