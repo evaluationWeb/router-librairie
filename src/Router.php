@@ -2,7 +2,7 @@
 
 namespace Mithridatem\Routing;
 
-use Mithridatem\Routing\Auth\AllowAllGrantChecker;
+use Mithridatem\Routing\Auth\ArrayGrantChecker;
 use Mithridatem\Routing\Auth\GrantCheckerInterface;
 use Mithridatem\Routing\Context\NativeRequestContext;
 use Mithridatem\Routing\Context\RequestContextInterface;
@@ -27,7 +27,7 @@ class Router
     ) {
         $this->routes = $routes ?? new RouteCollection();
         $this->controllerResolver = $controllerResolver ?? new DefaultControllerResolver();
-        $this->grantChecker = $grantChecker ?? new AllowAllGrantChecker();
+        $this->grantChecker = $grantChecker ?? new ArrayGrantChecker([]);
     }
 
     public function setDefaultContext(RequestContextInterface $context): void
@@ -87,6 +87,9 @@ class Router
         $match = $this->routes->match($context->getMethod(), $path);
 
         if ($match === null) {
+            if ($this->routes->allowedMethods($path) !== []) {
+                throw new \Mithridatem\Routing\Exception\MethodNotAllowedException($this->routes->allowedMethods($path));
+            }
             throw new RouteNotFoundException(sprintf('No route found for %s %s', $context->getMethod(), $path), 404);
         }
 
@@ -101,7 +104,7 @@ class Router
             ? $this->controllerResolver->resolve($handler)
             : $handler;
 
-        return $callable(...array_values($match->getParameters()));
+        return $callable(...$match->getParameters());
     }
 
     private function stripBasePath(string $path): string
@@ -112,7 +115,7 @@ class Router
             return $normalized;
         }
 
-        if (str_starts_with($normalized, $this->basePath)) {
+        if (($normalized === $this->basePath || str_starts_with($normalized, $this->basePath . '/'))) {
             $stripped = substr($normalized, strlen($this->basePath)) ?: '/';
             return $this->normalizePath($stripped);
         }
