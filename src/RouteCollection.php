@@ -12,7 +12,7 @@ class RouteCollection
         foreach ($this->routes as $existing) {
             if ($existing->getPath() === $route->getPath()
                 && array_intersect($existing->getMethods(), $route->getMethods()) !== []) {
-                throw new \\Mithridatem\\Routing\\Exception\\RouterException(
+                throw new \Mithridatem\Routing\Exception\\RouterException(
                     'Duplicate route for path ' . $route->getPath()
                 );
             }
