@@ -217,9 +217,129 @@ use Mithridatem\Routing\Route;
 $router->map(Route::get('/health', fn () => 'OK'));
 ```
 
-Pour un controleur ayant des dependances dans son constructeur, configurez
-un `ControllerResolverInterface` adapte. La decouverte ne fournit pas
-d'injection de dependances.
+### 5. Injection de dependances dans un controleur
+
+La decouverte automatique **enregistre les routes**, mais elle ne construit
+pas les controleurs avec leurs dependances. Le resolver par defaut appelle
+`new Controller()` ; pour injecter des services, il faut fournir un
+`ControllerResolverInterface` personnalise.
+
+Cet exemple utilise un registre d'instances, sans dependre d'un framework
+ou d'un conteneur externe.
+
+**Service :** `src/Service/ProductService.php`
+
+```php
+<?php
+
+namespace App\Service;
+
+final class ProductService
+{
+    public function findName(string $id): string
+    {
+        return 'Produit #' . $id;
+    }
+}
+```
+
+**Controleur :** `src/Controller/ProductController.php`
+
+```php
+<?php
+
+namespace App\Controller;
+
+use App\Service\ProductService;
+use Mithridatem\Routing\Attribute\Route;
+
+final class ProductController
+{
+    public function __construct(private ProductService $products)
+    {
+    }
+
+    #[Route(path: '/products/{id}', method: 'GET')]
+    public function show(string $id): string
+    {
+        return $this->products->findName($id);
+    }
+}
+```
+
+**Resolver :** `src/Routing/InstanceControllerResolver.php`
+
+```php
+<?php
+
+namespace App\Routing;
+
+use Mithridatem\Routing\Controller\ControllerResolverInterface;
+use Mithridatem\Routing\Handler\ControllerReference;
+use Mithridatem\Routing\Exception\RouterException;
+
+final class InstanceControllerResolver implements ControllerResolverInterface
+{
+    /** @param array<class-string, object> $controllers */
+    public function __construct(private array $controllers)
+    {
+    }
+
+    public function resolve(ControllerReference $controller): callable
+    {
+        $class = $controller->getClassName();
+        $method = $controller->getMethodName();
+        $instance = $this->controllers[$class] ?? null;
+
+        if ($instance === null) {
+            throw new RouterException("Controleur non enregistre : $class");
+        }
+
+        if (!is_callable([$instance, $method])) {
+            throw new RouterException("Methode non accessible : $class::$method");
+        }
+
+        return [$instance, $method];
+    }
+}
+```
+
+**Point d'entree :** `public/index.php`
+
+```php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use App\Controller\ProductController;
+use App\Routing\InstanceControllerResolver;
+use App\Service\ProductService;
+use Mithridatem\Routing\Loader\AttributeRouteLoader;
+use Mithridatem\Routing\Router;
+
+$products = new ProductService();
+$productController = new ProductController($products);
+
+$router = new Router();
+$router->setControllerResolver(new InstanceControllerResolver([
+    ProductController::class => $productController,
+]));
+
+(new AttributeRouteLoader())->loadDirectory(
+    router: $router,
+    directory: __DIR__ . '/../src/Controller',
+    namespace: 'App\\Controller'
+);
+
+echo $router->dispatch();
+```
+
+La route `GET /products/42` renvoie `Produit #42`. La declaration
+`#[Route]` est toujours decouverte automatiquement ; seule la creation
+de l'instance du controleur est explicite. Les autres controleurs decouverts
+doivent aussi etre enregistres dans ce resolver, sous peine d'erreur lors
+du dispatch. Pour une application plus importante, remplacez le registre
+par un resolver deleguant a un conteneur PSR-11.
 
 Consultez egalement le guide detaille : [Decouverte automatique des controleurs](docs/controller-discovery.md).
 
