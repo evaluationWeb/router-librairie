@@ -2,15 +2,17 @@
 
 namespace Mithridatem\Routing;
 
+use Mithridatem\Routing\Argument\ArgumentResolverInterface;
+use Mithridatem\Routing\Argument\DefaultArgumentResolver;
 use Mithridatem\Routing\Auth\ArrayGrantChecker;
 use Mithridatem\Routing\Auth\GrantCheckerInterface;
-use Mithridatem\Routing\Context\NativeRequestContext;
 use Mithridatem\Routing\Context\RequestContextInterface;
 use Mithridatem\Routing\Controller\ControllerResolverInterface;
 use Mithridatem\Routing\Controller\DefaultControllerResolver;
 use Mithridatem\Routing\Exception\RouteNotFoundException;
 use Mithridatem\Routing\Exception\UnauthorizedException;
 use Mithridatem\Routing\Handler\ControllerReference;
+use Mithridatem\Routing\Http\Request;
 
 class Router
 {
@@ -19,6 +21,7 @@ class Router
     private string $basePath = '/';
     private ControllerResolverInterface $controllerResolver;
     private GrantCheckerInterface $grantChecker;
+    private ArgumentResolverInterface $argumentResolver;
 
     public function __construct(
         ?RouteCollection $routes = null,
@@ -28,11 +31,17 @@ class Router
         $this->routes = $routes ?? new RouteCollection();
         $this->controllerResolver = $controllerResolver ?? new DefaultControllerResolver();
         $this->grantChecker = $grantChecker ?? new ArrayGrantChecker([]);
+        $this->argumentResolver = new DefaultArgumentResolver();
     }
 
     public function setDefaultContext(RequestContextInterface $context): void
     {
         $this->defaultContext = $context;
+    }
+
+    public function setArgumentResolver(ArgumentResolverInterface $resolver): void
+    {
+        $this->argumentResolver = $resolver;
     }
 
     public function setControllerResolver(ControllerResolverInterface $resolver): void
@@ -82,7 +91,7 @@ class Router
 
     public function dispatch(?RequestContextInterface $context = null): mixed
     {
-        $context = $context ?? $this->defaultContext ?? NativeRequestContext::fromGlobals();
+        $context = $context ?? $this->defaultContext ?? Request::fromGlobals();
         $path = $this->stripBasePath($context->getPath());
         $match = $this->routes->match($context->getMethod(), $path);
 
@@ -104,7 +113,9 @@ class Router
             ? $this->controllerResolver->resolve($handler)
             : $handler;
 
-        return $callable(...$match->getParameters());
+        $arguments = $this->argumentResolver->resolve($callable, $match->getParameters(), $context);
+
+        return $callable(...$arguments);
     }
 
     private function stripBasePath(string $path): string

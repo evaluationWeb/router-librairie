@@ -23,3 +23,17 @@
 
 - Ajoutez vos propres `GrantCheckerInterface` et `ControllerResolverInterface` dans un namespace applicatif.
 - Composez les routes dans des fichiers de configuration ou des providers dedicaces.
+
+## Requêtes et arguments des actions
+
+`Http\RequestInterface` étend `RequestContextInterface` sans modifier ce dernier.
+`Http\Request` capture les données HTTP ; `Router::dispatch()` l'utilise par défaut.
+Un contexte explicite n'est jamais remplacé ou enrichi depuis les superglobales.
+
+Après le matching et le contrôle des autorisations, `ControllerResolverInterface`
+résout le callable du contrôleur, puis `ArgumentResolverInterface` prépare les
+arguments nommés. `DefaultArgumentResolver` conserve les paramètres de route et
+ajoute la requête aux paramètres qui la demandent par leur type.
+Le routeur invoque ensuite le callable et retourne sa valeur sans la transformer.
+
+Voir [le guide HTTP](http-request.md) pour le cycle de vie et les limites.
