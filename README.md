@@ -94,6 +94,37 @@ demandant `RequestInterface` necessite un contexte compatible, sinon une
 Voir le [guide des requetes HTTP](docs/http-request.md), les exemples executables
 [avec closures](examples/request.php) et [avec Attributes](examples/request-controller.php).
 
+## Fichiers envoyes par formulaire
+
+`Request` implemente aussi `FileRequestInterface`, qui etend `RequestInterface`
+sans la modifier. Les implementations personnalisees existantes restent compatibles.
+
+```php
+use Mithridatem\Routing\Http\FileRequestInterface;
+
+$router->map(Route::post('/upload', function (FileRequestInterface $request): string {
+    $file = $request->file('cover');
+    if ($file === null || $file->getError() === UPLOAD_ERR_NO_FILE) {
+        return 'Aucun fichier selectionne.';
+    }
+    if (!$file->isValid()) {
+        return 'Erreur de transfert : ' . $file->getError();
+    }
+
+    // Metadonnees conservees : tmp_name, name, size et error.
+    // Valider le contenu puis utiliser le service de stockage.
+    return 'Fichier recu : ' . $file->getSize() . ' octets.';
+}));
+```
+
+`files('attachments')` gere les fichiers multiples et les champs imbriques.
+`UploadedFile::moveTo($destination)` encapsule `move_uploaded_file()` ; le nom
+d'origine et le chemin temporaire restent consultables apres le deplacement.
+La superglobale `$_FILES` reste intacte et utilisable avec l'ancienne methode.
+
+Voir le [guide des uploads](docs/file-uploads.md) et
+[l'exemple avec formulaire](examples/upload.php).
+
 ## Controlleurs et resolution
 
 Lorsque vos handlers resident dans des classes, utilisez `Route::controller()` et laissez le routeur resoudre la methode correspondante :

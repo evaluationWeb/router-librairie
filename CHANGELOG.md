@@ -7,6 +7,13 @@ s'inspire du format [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## [Unreleased]
 
+### Fichiers HTTP
+- Ajout de `UploadedFile` avec conservation des métadonnées `tmp_name`, `name`, `size` et `error`, validation native de l'upload et déplacement via `moveTo()`.
+- Nouvelle interface `FileRequestInterface` étendant `RequestInterface` sans changer son contrat ; accès aux champs simples, multiples et imbriqués via `file()` et `files()`.
+- Normalisation de `$_FILES` sans modification de la superglobale et conservation des entrées en erreur, notamment `UPLOAD_ERR_NO_FILE`.
+- Dernier argument facultatif `files` dans `Request`, tests unitaires et test HTTP multipart réel couvrant aussi l'ancienne méthode `move_uploaded_file($_FILES[...]['tmp_name'], ...)`.
+- Guide `docs/file-uploads.md` et exemple exécutable `examples/upload.php`.
+
 ### Ajouté
 - Objet `Http\Request` et `RequestInterface` : méthode, chemin, query string, formulaire, en-têtes insensibles à la casse, token Bearer et corps brut.
 - Construction explicite pour les tests ou `Request::fromGlobals()` pour la requête courante.
