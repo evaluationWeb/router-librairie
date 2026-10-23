@@ -31,8 +31,10 @@ est absente ; une valeur explicitement `null` reste `null`.
 Les valeurs peuvent être des chaînes ou des tableaux : vérifiez leur type avant usage.
 Aucune conversion, validation métier ou protection HTML n'est automatique.
 
-`post()` concerne les formulaires analysés par PHP. Le JSON, les corps PUT/PATCH,
-les fichiers et les cookies ne sont pas analysés par cette première version.
+`post()` concerne les formulaires analysés par PHP. Les fichiers sont accessibles
+via `FileRequestInterface`, implémentée par `Request` : voir le
+[guide des uploads](file-uploads.md). Le JSON, les corps PUT/PATCH et les cookies
+ne sont pas analysés automatiquement.
 Pour traiter du JSON, utilisez explicitement :
 
 ```php

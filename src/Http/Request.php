@@ -7,16 +7,19 @@ namespace Mithridatem\Routing\Http;
 use Mithridatem\Routing\Context\NativeRequestContext;
 use Mithridatem\Routing\Exception\RouterException;
 
-final class Request implements RequestInterface
+final class Request implements FileRequestInterface
 {
     /** @var array<string, string> */
     private readonly array $headers;
     private readonly string $method;
+    /** @var array<string|int, UploadedFile|array> */
+    private readonly array $files;
 
     /**
      * @param array<string, mixed> $query
      * @param array<string, mixed> $post
      * @param array<string, string> $headers
+     * @param array<string|int, UploadedFile|array> $files Normalized file tree.
      */
     public function __construct(
         private readonly string $path,
@@ -24,8 +27,11 @@ final class Request implements RequestInterface
         private readonly array $query = [],
         private readonly array $post = [],
         array $headers = [],
-        private readonly string $content = ''
+        private readonly string $content = '',
+        array $files = []
     ) {
+        self::validateFiles($files);
+        $this->files = $files;
         $this->method = strtoupper($method);
         $normalized = [];
         foreach ($headers as $name => $value) {
@@ -60,7 +66,8 @@ final class Request implements RequestInterface
             $_GET,
             $_POST,
             $headers,
-            $content
+            $content,
+            UploadedFileNormalizer::fromPhpFiles($_FILES)
         );
     }
 
@@ -101,5 +108,37 @@ final class Request implements RequestInterface
     public function getContent(): string
     {
         return $this->content;
+    }
+
+    public function file(string $name): ?UploadedFile
+    {
+        $file = $this->files[$name] ?? null;
+        if (is_array($file)) {
+            throw new \InvalidArgumentException('Use files() for a multiple or nested file field: ' . $name);
+        }
+
+        return $file;
+    }
+
+    public function files(?string $name = null): array
+    {
+        if ($name === null) {
+            return $this->files;
+        }
+
+        $files = $this->files[$name] ?? [];
+
+        return $files instanceof UploadedFile ? [$files] : $files;
+    }
+
+    private static function validateFiles(array $files): void
+    {
+        foreach ($files as $file) {
+            if (is_array($file)) {
+                self::validateFiles($file);
+            } elseif (!$file instanceof UploadedFile) {
+                throw new \InvalidArgumentException('Request files must contain UploadedFile objects or nested arrays.');
+            }
+        }
     }
 }
