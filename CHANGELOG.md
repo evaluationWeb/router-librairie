@@ -7,7 +7,17 @@ s'inspire du format [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## [Unreleased]
 
-_Aucune modification annoncée pour la prochaine version._
+### Ajouté
+- Objet `Http\Request` et `RequestInterface` : méthode, chemin, query string, formulaire, en-têtes insensibles à la casse, token Bearer et corps brut.
+- Construction explicite pour les tests ou `Request::fromGlobals()` pour la requête courante.
+- Injection de la requête par type dans les closures et actions de contrôleurs, y compris les routes déclarées par Attributes.
+- `ArgumentResolverInterface`, implémentation par défaut et `Router::setArgumentResolver()`.
+- Tests de compatibilité et exemples exécutables avec closures et Attributes ; guide `docs/http-request.md`.
+
+### Compatibilité
+- Les contrats existants, les resolvers de contrôleurs et les paramètres de route transmis par nom sont conservés.
+- `dispatch()` sans contexte construit désormais une `Request` complète ; les contextes minimaux explicites restent acceptés pour les anciennes actions.
+- Une injection demandée avec un contexte incompatible ou un nom de placeholder en conflit lève une `RouterException` explicite.
 
 ## [1.2.0] - 2026-10-16
 

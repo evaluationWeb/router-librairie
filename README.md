@@ -42,7 +42,7 @@ $router->map(Route::get('/books/{id}', function (string $id) {
 echo $router->dispatch();
 ```
 
-Par defaut `dispatch()` detecte la requete courante via `NativeRequestContext::fromGlobals()`. Pour des tests unitaires, injectez votre propre contexte :
+Par defaut `dispatch()` detecte la requete courante via `Http\Request::fromGlobals()`. Les anciens contextes restent acceptes. Pour des tests unitaires, injectez votre propre contexte :
 
 ```php
 use Mithridatem\Routing\Context\RequestContextInterface;
@@ -58,6 +58,41 @@ final class FakeContext implements RequestContextInterface
 
 $router->dispatch(new FakeContext('/books/42', 'GET'));
 ```
+
+## Requete HTTP et injection dans les actions
+
+L'objet `Http\Request` donne acces aux parametres d'URL, aux champs de formulaire,
+aux en-tetes et au corps brut. Il implemente `RequestInterface`, qui etend le
+contrat `RequestContextInterface` existant.
+
+```php
+use Mithridatem\Routing\Http\RequestInterface;
+
+$router->map(Route::post('/books/{id}', function (string $id, RequestInterface $request): string {
+    $title = $request->post('title');
+    if (!is_string($title) || trim($title) === '') {
+        return 'Le titre est obligatoire.';
+    }
+
+    // Appeler ici le service metier.
+    return 'Livre modifie.';
+}));
+
+echo $router->dispatch();
+```
+
+La requete est injectee par son type, quelle que soit sa position dans la signature.
+Les parametres de route restent transmis par nom. Ce mecanisme fonctionne aussi
+avec les methodes annotees `#[Route]` et les resolvers de controleurs existants.
+`query('page', '1')` lit les donnees d'URL ; `post('title')` lit celles du formulaire.
+Le JSON se lit via `getContent()` puis se decode explicitement.
+
+Un ancien contexte minimal reste compatible avec les actions existantes. Une action
+demandant `RequestInterface` necessite un contexte compatible, sinon une
+`RouterException` est levee.
+
+Voir le [guide des requetes HTTP](docs/http-request.md), les exemples executables
+[avec closures](examples/request.php) et [avec Attributes](examples/request-controller.php).
 
 ## Controlleurs et resolution
 
