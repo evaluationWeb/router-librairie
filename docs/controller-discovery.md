@@ -44,4 +44,16 @@ The directory and namespace must correspond to the application's Composer PSR-4 
 
 The discovery component traverses PHP files recursively, derives class names from relative paths, and uses `class_exists()` to let Composer autoload classes. It does **not** execute arbitrary files with `require`. Files that do not map to an autoloadable class are ignored.
 
+Only instantiable classes are returned by directory discovery. Abstract base
+controllers (such as `AbstractController`) and other non-instantiable classes
+are skipped, so they can live alongside concrete controllers in the same directory.
+No controller is constructed during discovery; concrete controllers with required
+constructor dependencies remain eligible for resolution by your custom resolver
+or dependency injection container.
+
+Public methods carrying `#[Route]` on an abstract parent are still loaded through
+its discovered concrete child. As before, registering an abstract or otherwise
+non-instantiable class explicitly with `loadController()` or `loadControllers()`
+throws an `InvalidArgumentException`; only directory discovery skips those classes.
+
 Existing `loadController()`, `loadControllers()`, `map()`, and `mapController()` APIs are unchanged. Controller instantiation still uses the configured controller resolver. Scanning happens each time `loadDirectory()` is called; there is no discovery cache in this version.

@@ -10,10 +10,31 @@ use Mithridatem\Routing\Route;
 use Mithridatem\Routing\Router;
 use Mithridatem\Routing\Tests\Support\AttributeDemoController;
 use Mithridatem\Routing\Tests\Support\FakeRequestContext;
+use Mithridatem\Routing\Tests\Fixtures\Discovery\Inheritance\AbstractController;
+use Mithridatem\Routing\Tests\Fixtures\Discovery\Inheritance\PrivateController;
 use PHPUnit\Framework\TestCase;
 
 final class AttributeRouteLoaderTest extends TestCase
 {
+    public function testExplicitAbstractControllerRegistrationStillThrows(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be instantiable');
+        (new AttributeRouteLoader())->loadController(new Router(), AbstractController::class);
+    }
+
+    public function testExplicitPrivateConstructorRegistrationStillThrows(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        (new AttributeRouteLoader())->loadController(new Router(), PrivateController::class);
+    }
+
+    public function testExplicitControllerListStillRejectsAnAbstractClass(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        (new AttributeRouteLoader())->loadControllers(new Router(), [AbstractController::class]);
+    }
+
     public function testLoadsRepeatedAndMultipleMethodAttributes(): void
     {
         $router = new Router();
