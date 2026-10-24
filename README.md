@@ -263,6 +263,12 @@ Le dossier **doit correspondre au namespace PSR-4**. Par exemple,
 
 Le chargement utilise l'autoload Composer et n'inclut pas directement les
 fichiers trouves. Les classes non autoloadables sont ignorees.
+Les classes abstraites (par exemple `AbstractController`) et les autres classes
+non instanciables sont egalement ignorees lors de la decouverte du repertoire.
+Les controleurs concrets peuvent donc heriter d'une base abstraite dans ce meme
+dossier. Leurs methodes publiques heritees portant `#[Route]` restent chargees.
+L'enregistrement explicite d'une classe non instanciable via `loadController()`
+ou `loadControllers()` continue de lever une exception.
 
 ### 4. Autorisations et compatibilite
 

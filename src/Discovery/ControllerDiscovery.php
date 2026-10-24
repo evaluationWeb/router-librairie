@@ -6,12 +6,13 @@ namespace Mithridatem\Routing\Discovery;
 
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
 use SplFileInfo;
 
 final class ControllerDiscovery
 {
     /**
-     * Discover PSR-4 controller classes under a directory.
+     * Discover instantiable PSR-4 controller classes under a directory.
      * Composer's autoloader must be registered before calling this method.
      *
      * @return list<class-string>
@@ -58,7 +59,7 @@ final class ControllerDiscovery
             $class = $prefix . '\\' . $suffix;
 
             // class_exists triggers Composer's PSR-4 autoloader; never require arbitrary files.
-            if (class_exists($class)) {
+            if (class_exists($class) && (new ReflectionClass($class))->isInstantiable()) {
                 $classes[] = $class;
             }
         }

@@ -7,6 +7,14 @@ s'inspire du format [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## [Unreleased]
 
+### Corrigé
+- La découverte automatique des contrôleurs ignore les classes abstraites et les
+  autres classes non instanciables, permettant de conserver `AbstractController`
+  dans le même dossier que ses enfants concrets sans bloquer `loadDirectory()`.
+- Tests de régression sur les routes héritées, l'absence d'instanciation pendant
+  la découverte et la compatibilité des contrôleurs avec dépendances et des
+  enregistrements explicites.
+
 ### Fichiers HTTP
 - Ajout de `UploadedFile` avec conservation des métadonnées `tmp_name`, `name`, `size` et `error`, validation native de l'upload et déplacement via `moveTo()`.
 - Nouvelle interface `FileRequestInterface` étendant `RequestInterface` sans changer son contrat ; accès aux champs simples, multiples et imbriqués via `file()` et `files()`.
