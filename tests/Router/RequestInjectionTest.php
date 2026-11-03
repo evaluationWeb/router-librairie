@@ -9,6 +9,7 @@ use Mithridatem\Routing\Context\NativeRequestContext;
 use Mithridatem\Routing\Context\RequestContextInterface;
 use Mithridatem\Routing\Exception\RouterException;
 use Mithridatem\Routing\Exception\UnauthorizedException;
+use Mithridatem\Routing\Http\ParameterCollectionRequestInterface;
 use Mithridatem\Routing\Http\Request;
 use Mithridatem\Routing\Http\RequestInterface;
 use Mithridatem\Routing\Loader\AttributeRouteLoader;
@@ -41,6 +42,16 @@ final class RequestInjectionTest extends TestCase
         $router->map(Route::get('/', fn (Request $first, RequestInterface $second) => [$first, $second]));
         $request = new Request('/');
         self::assertSame([$request, $request], $router->dispatch($request));
+    }
+
+    public function testParameterCollectionInterfaceIsInjectedIntoControllerAction(): void
+    {
+        $router = new Router();
+        $router->map(Route::post('/register', fn (ParameterCollectionRequestInterface $request)
+            => $request->allPost()));
+
+        $post = ['firstname' => 'Ada', 'email' => 'ada@example.test'];
+        self::assertSame($post, $router->dispatch(new Request('/register', 'POST', post: $post)));
     }
 
     public function testCustomRequestImplementationIsAccepted(): void
