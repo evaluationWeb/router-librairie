@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Mithridatem\Routing\Tests\Http;
 
 use Mithridatem\Routing\Http\Request;
+use Mithridatem\Routing\Http\ParameterCollectionRequestInterface;
 use PHPUnit\Framework\TestCase;
 
 final class RequestTest extends TestCase
@@ -20,6 +21,37 @@ final class RequestTest extends TestCase
         self::assertSame('1', $request->query('page', '1'));
         self::assertNull($request->post('missing'));
         self::assertSame([], $request->post('missing', []));
+    }
+
+    public function testParameterCollectionsAreAvailableWithoutChangingIndividualAccessors(): void
+    {
+        $query = ['page' => '2', 'filters' => ['category' => 'php']];
+        $post = ['email' => 'user@example.test', 'roles' => ['reader'], 'optional' => null];
+        $request = new Request('/register', 'POST', $query, $post);
+
+        self::assertInstanceOf(ParameterCollectionRequestInterface::class, $request);
+        self::assertSame($query, $request->allQuery());
+        self::assertSame($post, $request->allPost());
+        self::assertSame('2', $request->query('page'));
+        self::assertSame('user@example.test', $request->post('email'));
+        self::assertNull($request->post('optional', 'fallback'));
+        self::assertSame([], (new Request('/'))->allQuery());
+        self::assertSame([], (new Request('/'))->allPost());
+    }
+
+    public function testCollectionMethodsDoNotParseRawJsonBody(): void
+    {
+        $request = new Request(
+            '/api',
+            'POST',
+            [],
+            [],
+            ['Content-Type' => 'application/json'],
+            '{"email":"user@example.test"}'
+        );
+
+        self::assertSame([], $request->allPost());
+        self::assertSame('{"email":"user@example.test"}', $request->getContent());
     }
 
     public function testValuesAreNotConvertedFilteredOrEscaped(): void
