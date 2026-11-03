@@ -15,10 +15,34 @@ $request->getMethod();                  // GET, POST…
 $request->getPath();                    // /books, sans la query string
 $request->query('page', '1');            // $_GET
 $request->post('title');                // $_POST
+$request->allPost();                    // tous les paramètres $_POST (tableau)
+$request->allQuery();                   // tous les paramètres $_GET (tableau)
 $request->header('Content-Type');       // nom insensible à la casse
 $request->getBearerToken();             // Authorization: Bearer …
 $request->getContent();                 // corps brut, relisible
 ```
+
+Les méthodes `allPost()` et `allQuery()` sont disponibles sur
+`Request` via `ParameterCollectionRequestInterface`. Cette interface
+complémentaire étend `RequestInterface` **sans ajouter de méthode obligatoire**
+aux implémentations tierces existantes de `RequestInterface`.
+
+Exemple pour construire un DTO depuis un formulaire HTML :
+
+```php
+use Mithridatem\\Routing\\Http\\ParameterCollectionRequestInterface;
+
+public function register(ParameterCollectionRequestInterface $request): mixed
+{
+    $input = RegisterUserInput::fromArray($request->allPost());
+    return $this->userService->register($input);
+}
+```
+
+La construction du DTO reste dans la couche HTTP, le service reçoit uniquement
+des données applicatives. `allPost()` retourne le tableau des paramètres
+analysés par PHP ; il **ne décode pas le JSON** provenant de `getContent()`
+et ne contient pas les fichiers téléversés.
 
 La factory lit les superglobales et `php://input` une fois à la construction.
 L'objet conserve un instantané de ces données. Les en-têtes proviennent des
