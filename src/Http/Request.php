@@ -7,7 +7,7 @@ namespace Mithridatem\Routing\Http;
 use Mithridatem\Routing\Context\NativeRequestContext;
 use Mithridatem\Routing\Exception\RouterException;
 
-final class Request implements FileRequestInterface
+final class Request implements FileRequestInterface, ParameterCollectionRequestInterface
 {
     /** @var array<string, string> */
     private readonly array $headers;
@@ -98,6 +98,16 @@ final class Request implements FileRequestInterface
     public function post(string $name, mixed $default = null): mixed
     {
         return array_key_exists($name, $this->post) ? $this->post[$name] : $default;
+    }
+
+    public function allQuery(): array
+    {
+        return $this->query;
+    }
+
+    public function allPost(): array
+    {
+        return $this->post;
     }
 
     public function header(string $name, ?string $default = null): ?string
