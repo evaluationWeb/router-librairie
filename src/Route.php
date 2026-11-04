@@ -16,7 +16,8 @@ class Route
         private string $path,
         ControllerReference|callable $handler,
         private array $grants = [],
-        private array $defaultParameters = []
+        private array $defaultParameters = [],
+        private array $middleware = []
     ) {
         $this->methods = array_values(array_unique(array_map('strtoupper', $methods)));
         $this->path = $this->normalizePath($path);
@@ -47,6 +48,21 @@ class Route
         array $grants = []
     ): self {
         return new self([$method], $path, new ControllerReference($controllerClass, $controllerMethod), $grants);
+    }
+
+    /** @return list<\Mithridatem\Routing\Middleware\MiddlewareInterface|class-string<\Mithridatem\Routing\Middleware\MiddlewareInterface>> */
+    public function getMiddleware(): array
+    {
+        return $this->middleware;
+    }
+
+    /** Return a new route carrying the specified middleware(s). */
+    public function withMiddleware(\Mithridatem\Routing\Middleware\MiddlewareInterface|string ...$middleware): self
+    {
+        $clone = clone $this;
+        $clone->middleware = [...$this->middleware, ...$middleware];
+
+        return $clone;
     }
 
     public function getMethods(): array
