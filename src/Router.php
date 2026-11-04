@@ -13,6 +13,10 @@ use Mithridatem\Routing\Exception\RouteNotFoundException;
 use Mithridatem\Routing\Exception\UnauthorizedException;
 use Mithridatem\Routing\Handler\ControllerReference;
 use Mithridatem\Routing\Http\Request;
+use Mithridatem\Routing\Middleware\DefaultMiddlewareResolver;
+use Mithridatem\Routing\Middleware\MiddlewareInterface;
+use Mithridatem\Routing\Middleware\MiddlewarePipeline;
+use Mithridatem\Routing\Middleware\MiddlewareResolverInterface;
 
 class Router
 {
@@ -22,6 +26,9 @@ class Router
     private ControllerResolverInterface $controllerResolver;
     private GrantCheckerInterface $grantChecker;
     private ArgumentResolverInterface $argumentResolver;
+    private MiddlewareResolverInterface $middlewareResolver;
+    /** @var list<MiddlewareInterface|class-string<MiddlewareInterface>> */
+    private array $middleware = [];
 
     public function __construct(
         ?RouteCollection $routes = null,
@@ -32,6 +39,7 @@ class Router
         $this->controllerResolver = $controllerResolver ?? new DefaultControllerResolver();
         $this->grantChecker = $grantChecker ?? new ArrayGrantChecker([]);
         $this->argumentResolver = new DefaultArgumentResolver();
+        $this->middlewareResolver = new DefaultMiddlewareResolver();
     }
 
     public function setDefaultContext(RequestContextInterface $context): void
@@ -52,6 +60,18 @@ class Router
     public function setGrantChecker(GrantCheckerInterface $grantChecker): void
     {
         $this->grantChecker = $grantChecker;
+    }
+
+    public function setMiddlewareResolver(MiddlewareResolverInterface $resolver): void
+    {
+        $this->middlewareResolver = $resolver;
+    }
+
+    public function addMiddleware(MiddlewareInterface|string $middleware): self
+    {
+        $this->middleware[] = $middleware;
+
+        return $this;
     }
 
     public function setBasePath(string $basePath): void
@@ -104,18 +124,26 @@ class Router
 
         $route = $match->getRoute();
 
-        if (!$this->grantChecker->isGranted($route->getGrants())) {
-            throw new UnauthorizedException('Access denied for this route.', 403);
-        }
+        $destination = function (RequestContextInterface $request) use ($route, $match): mixed {
+            if (!$this->grantChecker->isGranted($route->getGrants())) {
+                throw new UnauthorizedException('Access denied for this route.', 403);
+            }
 
-        $handler = $route->getHandler();
-        $callable = $handler instanceof ControllerReference
-            ? $this->controllerResolver->resolve($handler)
-            : $handler;
+            $handler = $route->getHandler();
+            $callable = $handler instanceof ControllerReference
+                ? $this->controllerResolver->resolve($handler)
+                : $handler;
 
-        $arguments = $this->argumentResolver->resolve($callable, $match->getParameters(), $context);
+            $arguments = $this->argumentResolver->resolve($callable, $match->getParameters(), $request);
 
-        return $callable(...$arguments);
+            return $callable(...$arguments);
+        };
+
+        return (new MiddlewarePipeline($this->middlewareResolver))->process(
+            $context,
+            [...$this->middleware, ...$route->getMiddleware()],
+            $destination
+        );
     }
 
     private function stripBasePath(string $path): string
