@@ -95,7 +95,7 @@ final class MiddlewarePipelineTest extends TestCase
             return 'private';
         }, ['ROLE_ADMIN']));
 
-        $this->expectException(\Mithridatem\\Routing\\Exception\\UnauthorizedException::class);
+        $this->expectException(\Mithridatem\Routing\Exception\UnauthorizedException::class);
         try {
             $router->dispatch(new Request('/private'));
         } finally {
