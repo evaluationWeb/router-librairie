@@ -80,6 +80,45 @@ final class MiddlewarePipelineTest extends TestCase
         self::assertSame('wrapped:controller', $router->dispatch(new Request('/middleware-demo')));
     }
 
+    public function testGrantDenialRemainsEffectiveAfterMiddleware(): void
+    {
+        $called = false;
+        $router = new Router();
+        $router->addMiddleware(new class implements MiddlewareInterface {
+            public function process(RequestContextInterface $context, callable $next): mixed
+            {
+                return $next($context);
+            }
+        });
+        $router->map(Route::get('/private', static function () use (&$called) {
+            $called = true;
+            return 'private';
+        }, ['ROLE_ADMIN']));
+
+        $this->expectException(\Mithridatem\\Routing\\Exception\\UnauthorizedException::class);
+        try {
+            $router->dispatch(new Request('/private'));
+        } finally {
+            self::assertFalse($called);
+        }
+    }
+
+    public function testMiddlewareExceptionPropagates(): void
+    {
+        $router = new Router();
+        $router->map(Route::get('/explode', static fn () => 'unused')
+            ->withMiddleware(new class implements MiddlewareInterface {
+                public function process(RequestContextInterface $context, callable $next): mixed
+                {
+                    throw new \RuntimeException('middleware failure');
+                }
+            }));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('middleware failure');
+        $router->dispatch(new Request('/explode'));
+    }
+
     public function testGlobalMiddlewareReceivesAlreadyMatchedRoute(): void
     {
         $router = new Router();
