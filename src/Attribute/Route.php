@@ -15,7 +15,8 @@ final class Route
     public function __construct(
         public readonly string $path,
         public readonly string|array $method = 'GET',
-        public readonly array $grants = []
+        public readonly array $grants = [],
+        public readonly array $middleware = []
     ) {
         if ($path === '') {
             throw new \InvalidArgumentException('Route path must not be empty.');
@@ -24,6 +25,12 @@ final class Route
         $methods = (array) $method;
         if ($methods === []) {
             throw new \InvalidArgumentException('At least one HTTP method is required.');
+        }
+
+        foreach ($middleware as $entry) {
+            if (!is_string($entry) || !is_a($entry, \Mithridatem\Routing\Middleware\MiddlewareInterface::class, true)) {
+                throw new \InvalidArgumentException('Route middleware entries must be MiddlewareInterface class names.');
+            }
         }
 
         foreach ($methods as $httpMethod) {
