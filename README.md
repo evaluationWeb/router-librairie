@@ -461,3 +461,19 @@ Un exemple minimal est disponible dans `examples/basic.php`. Des doubles de test
 - Documentation d'architecture : `docs/architecture.md`.
 - Guide de migration : `docs/migration.md`.
 - Processus de contribution : `CONTRIBUTING.md` et `SECURITY.md`.
+
+
+## Middleware pipeline (opt-in)
+
+Le routeur prend en charge les middlewares globaux et propres aux routes :
+
+```php
+$router->addMiddleware(new LoggingMiddleware());
+
+#[Route(path: '/login', method: 'POST', middleware: [CsrfMiddleware::class])]
+public function login(): mixed { /* ... */ }
+```
+
+Le contrôle des `grants` existant reste actif, après les middlewares et avant le contrôleur. Les middlewares nécessitant des dépendances utilisent un `MiddlewareResolverInterface` configurable ; les implémentations CSRF/JWT restent dans l'application consommatrice.
+
+Voir [docs/middleware.md](docs/middleware.md) pour le contrat, la configuration et les notes de compatibilité.
