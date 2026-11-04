@@ -36,7 +36,8 @@ final class AttributeRouteLoader
                     methods: (array) $definition->method,
                     path: $definition->path,
                     handler: new ControllerReference($controllerClass, $method->getName()),
-                    grants: $definition->grants
+                    grants: $definition->grants,
+                    middleware: $definition->middleware
                 ));
             }
         }
