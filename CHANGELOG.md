@@ -1,3 +1,13 @@
+## Unreleased
+
+### Added
+- Optional global and per-route middleware pipeline, `MiddlewareInterface`, and pluggable `MiddlewareResolverInterface`.
+- Optional `middleware` property on route attributes and fluent `Route::withMiddleware()`.
+- Middleware pipeline tests and usage documentation.
+
+### Compatibility
+- Existing routes, `RequestContextInterface`, grant checking and public factory signatures remain supported.
+
 # Changelog
 
 Toutes les modifications notables de **Mithridatem Router** sont documentées ici.
