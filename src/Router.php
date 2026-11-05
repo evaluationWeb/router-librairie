@@ -88,7 +88,7 @@ class Router
         return $this->basePath;
     }
 
-    public function map(Route $route): self
+    public function map(RouteInterface $route): self
     {
         $this->routes->add($route);
 
