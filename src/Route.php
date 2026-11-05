@@ -4,6 +4,7 @@ namespace Mithridatem\Routing;
 
 use Closure;
 use Mithridatem\Routing\Handler\ControllerReference;
+use Mithridatem\Routing\Path\PathNormalizer;
 
 class Route
 {
@@ -20,7 +21,7 @@ class Route
         private array $middleware = []
     ) {
         $this->methods = array_values(array_unique(array_map('strtoupper', $methods)));
-        $this->path = $this->normalizePath($path);
+        $this->path = (new PathNormalizer())->normalize($path);
         $this->handler = $handler instanceof ControllerReference ? $handler : Closure::fromCallable($handler);
         $this->compilePattern();
     }
@@ -96,7 +97,7 @@ class Route
             return null;
         }
 
-        $path = $this->normalizePath($path);
+        $path = (new PathNormalizer())->normalize($path);
 
         if (!preg_match($this->regex, $path, $matches)) {
             return null;
@@ -114,7 +115,7 @@ class Route
 
     public function matchesPath(string $path): bool
     {
-        return preg_match($this->regex, $this->normalizePath($path)) === 1;
+        return preg_match($this->regex, (new PathNormalizer())->normalize($path)) === 1;
     }
 
     private function compilePattern(): void
@@ -145,13 +146,4 @@ class Route
         $this->regex = '#^' . $regex . '$#D';
     }
 
-    private function normalizePath(string $path): string
-    {
-        if ($path === '') {
-            return '/';
-        }
-
-        $clean = '/' . ltrim($path, '/');
-        return rtrim($clean, '/') ?: '/';
-    }
 }
