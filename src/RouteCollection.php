@@ -4,10 +4,10 @@ namespace Mithridatem\Routing;
 
 class RouteCollection
 {
-    /** @var Route[] */
+    /** @var list<RouteInterface> */
     private array $routes = [];
 
-    public function add(Route $route): void
+    public function add(RouteInterface $route): void
     {
         foreach ($this->routes as $existing) {
             if ($existing->getPath() === $route->getPath()
@@ -20,7 +20,7 @@ class RouteCollection
         $this->routes[] = $route;
     }
 
-    public function remove(Route $route): void
+    public function remove(RouteInterface $route): void
     {
         foreach ($this->routes as $index => $registeredRoute) {
             if ($registeredRoute === $route) {
@@ -32,7 +32,7 @@ class RouteCollection
     }
 
     /**
-     * @return Route[]
+     * @return list<RouteInterface>
      */
     public function all(): array
     {
