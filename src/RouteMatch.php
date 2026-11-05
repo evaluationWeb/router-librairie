@@ -5,12 +5,12 @@ namespace Mithridatem\Routing;
 class RouteMatch
 {
     public function __construct(
-        private readonly Route $route,
+        private readonly RouteInterface $route,
         private readonly array $parameters
     ) {
     }
 
-    public function getRoute(): Route
+    public function getRoute(): RouteInterface
     {
         return $this->route;
     }
