@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Mithridatem\Routing\Controller;
 
 use Mithridatem\Routing\Argument\ArgumentResolverInterface;
