@@ -5,7 +5,8 @@
 - `src/Router.php` expose l'API publique et orchestre matching, invocation et middlewares, sans implementer leurs details.
 - `src/Controller/ControllerInvoker.php` verifie les grants, resout le callable et les arguments puis invoque le handler.
 - `src/Path/PathNormalizer.php` centralise la normalisation des chemins et le retrait du prefixe applicatif (base path).
-- `src/Route.php` decrit une route HTTP avec chemins dynamiques et roles requis.
+- `src/RouteInterface.php` definit le contrat structurel commun (chemin, verbes HTTP, handler, grants, middleware, matching).
+- `src/Route.php` est l'implementation historique du contrat, avec chemins dynamiques et roles requis.
 - `src/RouteCollection.php` stocke les routes et renvoie un `RouteMatch`.
 - `src/RouteMatch.php` encapsule la route selectionnee et les parametres extraits.
 
@@ -14,6 +15,7 @@
 - `Context\RequestContextInterface` fournit chemin, verbe HTTP et jeton Bearer.
 - `Controller\ControllerResolverInterface` permet d'injecter un conteneur.
 - `Auth\GrantCheckerInterface` laisse l'application gerer ses droits.
+- `RouteInterface` permet des definitions alternatives de routes, sans imposer de classes de routes Web/API.
 
 ## Exceptions
 
@@ -44,3 +46,32 @@ Les setters publics de `Router` restent disponibles et sont pris en compte lors
 de chaque appel a `dispatch()`. Aucune adaptation des projets consommateurs n'est requise.
 
 Voir [le guide HTTP](http-request.md) pour le cycle de vie et les limites.
+
+## Contrat des routes et compatibilite
+
+`RouteInterface` regroupe les accesseurs de route et les operations `matches()` / `matchesPath()`.
+Ces deux operations restent dans le contrat parce que `RouteCollection` s'appuie sur elles pour
+rechercher une route et calculer les methodes autorisees pour les reponses 405.
+
+`Route` implemente desormais `RouteInterface` sans modifier son constructeur,
+ses factories ou son comportement. `Router::map()`, `RouteCollection::add()/remove()`
+et `RouteMatch::__construct()` acceptent des `RouteInterface`.
+`RouteCollection::all()` retourne une liste de `RouteInterface`, et
+`RouteMatch::getRoute()` declare le type de retour `RouteInterface`.
+Pour les routes creees avec `Route`, l'objet retourne reste bien une instance de `Route`.
+
+### Limite de compatibilite de typage
+
+La modification du type de retour declare de `RouteMatch::getRoute()` (de `Route`
+vers `RouteInterface`) peut necessiter une adaptation de code consommateur dont les
+signatures ou analyses statiques exigent explicitement `Route`. Les sous-classes
+qui surchargent `getRoute(): Route` restent compatibles par covariance, mais un
+code qui ne peut manipuler que `Route` devra verifier le type de l'objet ou accepter
+le contrat `RouteInterface`. Un code qui construit une `Route` et la recupere du
+match obtient toujours cet objet concret.
+
+### Hors perimetre
+
+Pas d'ajout de `WebRoute`, `ApiRoute` ou `SecurityPolicy`. JWT, CSRF et les
+regles metier d'autorisation restent pris en charge par les middlewares et
+le `GrantCheckerInterface` fournis par l'application.
