@@ -6,7 +6,7 @@ use Closure;
 use Mithridatem\Routing\Handler\ControllerReference;
 use Mithridatem\Routing\Path\PathNormalizer;
 
-class Route
+class Route implements RouteInterface
 {
     private string $regex;
     private array $parameterNames = [];
