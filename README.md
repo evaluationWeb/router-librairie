@@ -11,6 +11,17 @@ Mithridatem Router est une bibliotheque PHP oriente PSR-4 qui fournit un mecanis
 - Base path configurable (`Router::setBasePath`) pour les applications hebergees derriere un prefixe.
 - Exceptions explicites (`RouteNotFoundException`, `UnauthorizedException`, `RouterException`) pour une gestion d'erreur claire.
 
+## Architecture et compatibilite
+
+`Router` reste le point d'entree public : la recherche des routes est assuree par
+`RouteCollection`, la normalisation des chemins par `PathNormalizer`, et le controle
+des grants ainsi que l'invocation des handlers par `ControllerInvoker`.
+`MiddlewarePipeline` conserve l'ordre d'execution existant.
+
+Cette separation est interne : les signatures de `Router`, les setters de resolvers,
+les routes et le comportement de `dispatch()` sont conserves.
+Voir [la documentation d'architecture](docs/architecture.md).
+
 ## Installation
 
 ```bash
