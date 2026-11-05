@@ -32,6 +32,22 @@ final class ControllerInvokerTest extends TestCase
         );
     }
 
+    public function testLegacyScalarCoercionIsPreserved(): void
+    {
+        $invoker = new ControllerInvoker(
+            new DefaultControllerResolver(),
+            new DefaultArgumentResolver(),
+            new ArrayGrantChecker([])
+        );
+
+        $route = Route::get('/books/{id}', static fn (int $id): int => $id);
+
+        self::assertSame(
+            42,
+            $invoker->invoke(new RouteMatch($route, ['id' => '42']), new NativeRequestContext('/books/42', 'GET'))
+        );
+    }
+
     public function testAuthorizationPrecedesInvocation(): void
     {
         $called = false;
