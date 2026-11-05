@@ -9,6 +9,7 @@ use Mithridatem\Routing\Auth\GrantCheckerInterface;
 use Mithridatem\Routing\Context\RequestContextInterface;
 use Mithridatem\Routing\Controller\ControllerResolverInterface;
 use Mithridatem\Routing\Controller\DefaultControllerResolver;
+use Mithridatem\Routing\Controller\ControllerInvoker;
 use Mithridatem\Routing\Exception\RouteNotFoundException;
 use Mithridatem\Routing\Exception\UnauthorizedException;
 use Mithridatem\Routing\Handler\ControllerReference;
@@ -17,10 +18,12 @@ use Mithridatem\Routing\Middleware\DefaultMiddlewareResolver;
 use Mithridatem\Routing\Middleware\MiddlewareInterface;
 use Mithridatem\Routing\Middleware\MiddlewarePipeline;
 use Mithridatem\Routing\Middleware\MiddlewareResolverInterface;
+use Mithridatem\Routing\Path\PathNormalizer;
 
 class Router
 {
     private RouteCollection $routes;
+    private PathNormalizer $pathNormalizer;
     private ?RequestContextInterface $defaultContext = null;
     private string $basePath = '/';
     private ControllerResolverInterface $controllerResolver;
@@ -36,6 +39,7 @@ class Router
         ?GrantCheckerInterface $grantChecker = null
     ) {
         $this->routes = $routes ?? new RouteCollection();
+        $this->pathNormalizer = new PathNormalizer();
         $this->controllerResolver = $controllerResolver ?? new DefaultControllerResolver();
         $this->grantChecker = $grantChecker ?? new ArrayGrantChecker([]);
         $this->argumentResolver = new DefaultArgumentResolver();
@@ -76,8 +80,7 @@ class Router
 
     public function setBasePath(string $basePath): void
     {
-        $normalized = $basePath === '/' ? '/' : '/' . trim($basePath, '/');
-        $this->basePath = $normalized;
+        $this->basePath = $this->pathNormalizer->normalizeBasePath($basePath);
     }
 
     public function getBasePath(): string
@@ -112,7 +115,7 @@ class Router
     public function dispatch(?RequestContextInterface $context = null): mixed
     {
         $context = $context ?? $this->defaultContext ?? Request::fromGlobals();
-        $path = $this->stripBasePath($context->getPath());
+        $path = $this->pathNormalizer->stripBasePath($context->getPath(), $this->basePath);
         $match = $this->routes->match($context->getMethod(), $path);
 
         if ($match === null) {
@@ -124,20 +127,13 @@ class Router
 
         $route = $match->getRoute();
 
-        $destination = function (RequestContextInterface $request) use ($route, $match): mixed {
-            if (!$this->grantChecker->isGranted($route->getGrants())) {
-                throw new UnauthorizedException('Access denied for this route.', 403);
-            }
+        $invoker = new ControllerInvoker(
+            $this->controllerResolver,
+            $this->argumentResolver,
+            $this->grantChecker
+        );
 
-            $handler = $route->getHandler();
-            $callable = $handler instanceof ControllerReference
-                ? $this->controllerResolver->resolve($handler)
-                : $handler;
-
-            $arguments = $this->argumentResolver->resolve($callable, $match->getParameters(), $request);
-
-            return $callable(...$arguments);
-        };
+        $destination = static fn (RequestContextInterface $request): mixed => $invoker->invoke($match, $request);
 
         return (new MiddlewarePipeline($this->middlewareResolver))->process(
             $context,
@@ -146,25 +142,4 @@ class Router
         );
     }
 
-    private function stripBasePath(string $path): string
-    {
-        $normalized = $this->normalizePath($path);
-
-        if ($this->basePath === '/' || $this->basePath === '') {
-            return $normalized;
-        }
-
-        if (($normalized === $this->basePath || str_starts_with($normalized, $this->basePath . '/'))) {
-            $stripped = substr($normalized, strlen($this->basePath)) ?: '/';
-            return $this->normalizePath($stripped);
-        }
-
-        return $normalized;
-    }
-
-    private function normalizePath(string $path): string
-    {
-        $clean = '/' . ltrim($path, '/');
-        return rtrim($clean, '/') ?: '/';
-    }
 }
