@@ -22,6 +22,23 @@ Cette separation est interne : les signatures de `Router`, les setters de resolv
 les routes et le comportement de `dispatch()` sont conserves.
 Voir [la documentation d'architecture](docs/architecture.md).
 
+## Contrat des routes
+
+La classe `Route` implemente maintenant `RouteInterface`. Les applications peuvent
+continuer a utiliser `Route::get()`, `Route::post()`, `Route::controller()`,
+`#[Route]` et `Router::map()` sans modifier leurs declarations existantes.
+
+Le contrat expose les methodes HTTP, le chemin, le handler, les grants,
+les middlewares et les operations de correspondance. Il permet desormais
+d'enregistrer une implementation personnalisee de route dans `RouteCollection`
+ou directement avec `Router::map()`.
+
+**Note de compatibilite :** le type de retour declare de
+`RouteMatch::getRoute()` est elargi de `Route` a `RouteInterface`.
+Les routes historiques restent des objets `Route`, mais le code qui impose
+statiquement `Route` comme type de retour doit etre verifie.
+Voir [l'architecture](docs/architecture.md) pour les details.
+
 ## Installation
 
 ```bash
