@@ -99,7 +99,10 @@ final class RouteGroupTest extends TestCase
         (new AttributeRouteLoader())->loadController($router, GroupedAttributeController::class);
 
         self::assertSame('profile', $router->dispatch(new Request('/api/profile')));
-        self::assertSame('admin', $router->getRoutes()->all()[1]->getPath() === '/api/admin' ? 'admin' : 'unexpected');
+        self::assertContains('/api/admin', array_map(
+            static fn ($route): string => $route->getPath(),
+            $router->getRoutes()->all()
+        ));
         $this->expectException(UnauthorizedException::class);
         $router->dispatch(new Request('/api/admin'));
     }
