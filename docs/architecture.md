@@ -9,6 +9,8 @@
 - `src/Route.php` est l'implementation historique du contrat, avec chemins dynamiques et roles requis.
 - `src/RouteCollection.php` stocke les routes et renvoie un `RouteMatch`.
 - `src/RouteMatch.php` encapsule la route selectionnee et les parametres extraits.
+- `src/Group/RouteGroup.php` collecte des routes et leur configuration commune.
+- `src/Group/GroupedRoute.php` applique ces paramètres via un décorateur `RouteInterface`, sans modifier `Route`.
 
 ## Abstractions principales
 
@@ -75,3 +77,9 @@ match obtient toujours cet objet concret.
 Pas d'ajout de `WebRoute`, `ApiRoute` ou `SecurityPolicy`. JWT, CSRF et les
 regles metier d'autorisation restent pris en charge par les middlewares et
 le `GrantCheckerInterface` fournis par l'application.
+
+## Groupes facultatifs
+
+Les groupes déclarés par `Router::group()` ou `#[RouteGroup]` appliquent un préfixe,
+les grants hérités si une route n'en fournit pas, et les middlewares du groupe avant
+ceux de la route. Voir [les groupes de routes](route-groups.md).
