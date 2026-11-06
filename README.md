@@ -451,6 +451,24 @@ par un resolver deleguant a un conteneur PSR-11.
 
 Consultez egalement le guide detaille : [Decouverte automatique des controleurs](docs/controller-discovery.md).
 
+## Grants d'authentification (optionnels)
+
+Pour restreindre `/login` et `/register` aux visiteurs non connectes, ou proteger une route pour tous les utilisateurs authentifies, configurez `AuthenticationAwareGrantChecker` :
+
+```php
+use Mithridatem\Routing\Auth\AuthenticationAwareGrantChecker;
+
+$router->setGrantChecker(new AuthenticationAwareGrantChecker(
+    isAuthenticated: static fn (): bool => isset($_SESSION['user_id'])
+));
+```
+
+Puis declarez `grants: ['IS_GUEST']` ou `grants: ['IS_AUTHENTICATED']` sur vos routes. Les grants de roles existants peuvent etre fournis via un second argument `roleChecker` et continuent a fonctionner en OU ; un grant d'authentification et les roles sont cumulatifs.
+
+**Important :** la librairie ne gere ni session, ni JWT, ni redirection. Une route refusee leve toujours `UnauthorizedException` ; l'application Web gere eventuellement une redirection vers une page precedente valide, tandis que l'API renvoie une erreur JSON. Les anciens checkers conservent leur comportement.
+
+Voir [le guide des grants d'authentification](docs/authentication-grants.md).
+
 ## Gestion des autorisations
 
 Associez des droits a une route en fournissant un tableau de "grants" :
