@@ -13,6 +13,7 @@ use Mithridatem\Routing\Controller\ControllerInvoker;
 use Mithridatem\Routing\Exception\RouteNotFoundException;
 use Mithridatem\Routing\Exception\UnauthorizedException;
 use Mithridatem\Routing\Handler\ControllerReference;
+use Mithridatem\Routing\Group\RouteGroup;
 use Mithridatem\Routing\Http\Request;
 use Mithridatem\Routing\Middleware\DefaultMiddlewareResolver;
 use Mithridatem\Routing\Middleware\MiddlewareInterface;
@@ -103,6 +104,16 @@ class Router
         array $grants = []
     ): self {
         $this->map(Route::controller($method, $path, $controllerClass, $controllerMethod, $grants));
+
+        return $this;
+    }
+
+    /** Configure and register a group of routes without changing existing map() behavior. */
+    public function group(string $prefix, callable $configure): self
+    {
+        $group = new RouteGroup($this, $prefix);
+        $configure($group);
+        $group->register();
 
         return $this;
     }
