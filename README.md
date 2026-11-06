@@ -39,6 +39,14 @@ Les routes historiques restent des objets `Route`, mais le code qui impose
 statiquement `Route` comme type de retour doit etre verifie.
 Voir [l'architecture](docs/architecture.md) pour les details.
 
+## Groupes de routes (optionnel)
+
+Un groupe permet de partager un préfixe, des grants et des middlewares entre plusieurs routes.
+Les grants spécifiques d'une route remplacent ceux du groupe ; les middlewares s'enchaînent
+(global → groupe → route). Les routes existantes restent inchangées.
+Voir [le guide des groupes de routes](docs/route-groups.md) pour la syntaxe PHP
+et les attributs de classe `#[RouteGroup]`.
+
 ## Installation
 
 ```bash
