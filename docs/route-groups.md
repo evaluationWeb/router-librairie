@@ -52,6 +52,52 @@ final class ProfileController
 sur une route précisant `ROLE_ADMIN`. Un tableau vide ne peut pas rendre une route
 publique à l'intérieur d'un groupe protégé : placer les routes publiques hors de ce groupe.
 
+## Risque de configuration des autorisations
+
+> **Attention : l'héritage n'est pas cumulatif.** La déclaration de grants
+> spécifiques sur une route **désactive les grants du groupe pour cette route**.
+> Il s'agit du comportement prévu par l'API, et non d'un contournement HTTP
+> démontré. Le risque apparaît si l'application suppose à tort que les
+> restrictions de groupe restent obligatoires.
+
+Exemple :
+
+```php
+use Mithridatem\Routing\Group\RouteGroup;
+use Mithridatem\Routing\Route;
+
+$router->group('/admin', function (RouteGroup $group) use ($controller): void {
+    $group->grants(['ROLE_ADMIN']);
+
+    // Hérite de ROLE_ADMIN : l'accès nécessite ROLE_ADMIN.
+    $group->map(Route::get('/dashboard', [$controller, 'dashboard']));
+
+    // Remplace ROLE_ADMIN par ROLE_USER : un ROLE_USER seul suffit.
+    $group->map(Route::get('/reports', [$controller, 'reports'], ['ROLE_USER']));
+});
+```
+
+| Route | Grants réellement vérifiés | Conséquence |
+| --- | --- | --- |
+| `GET /admin/dashboard` | `ROLE_ADMIN` | Accès réservé à `ROLE_ADMIN` |
+| `GET /admin/reports` | `ROLE_USER` | `ROLE_ADMIN` du groupe **n'est pas exigé** |
+
+**Bonnes pratiques :**
+
+- Définir explicitement les grants de chaque route sensible et vérifier
+  le résultat effectif lorsque la route est placée dans un groupe.
+- Ne pas supposer que `['ROLE_ADMIN', 'ROLE_USER']` impose les deux rôles :
+  `ArrayGrantChecker` applique un **OU**.
+- Si une application exige une politique **ET** (par exemple :
+  utilisateur authentifié **et** rôle administrateur), la configurer
+  explicitement dans son contrôle d'accès ; ne pas utiliser une simple
+  concaténation des tableaux de rôles pour la simuler.
+- Ajouter des tests d'autorisation pour chaque route protégée, notamment
+  lorsqu'une route surcharge les grants du groupe.
+
+Cette règle s'applique aussi aux contrôleurs utilisant
+`#[RouteGroup(grants: [...])]` et `#[Route(grants: [...])]`.
+
 ## Ordre des middlewares
 
 `globaux → groupe → route → grants → contrôleur`, puis retour dans l'ordre inverse.
