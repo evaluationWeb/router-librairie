@@ -44,6 +44,14 @@ Voir [l'architecture](docs/architecture.md) pour les details.
 Un groupe permet de partager un préfixe, des grants et des middlewares entre plusieurs routes.
 Les grants spécifiques d'une route remplacent ceux du groupe ; les middlewares s'enchaînent
 (global → groupe → route). Les routes existantes restent inchangées.
+
+> **Attention — autorisations :** les grants de groupe ne constituent pas une
+> protection obligatoire si une route déclare ses propres grants. Par exemple,
+> un groupe avec `ROLE_ADMIN` et une route avec `ROLE_USER` autorise
+> un utilisateur ayant uniquement `ROLE_USER` sur cette route.
+> Les rôles d'une même liste sont évalués en **OU**, pas en **ET**.
+> Vérifiez les grants effectifs de chaque route sensible et consultez
+> [les règles d'héritage et les bonnes pratiques](docs/route-groups.md#risque-de-configuration-des-autorisations).
 Voir [le guide des groupes de routes](docs/route-groups.md) pour la syntaxe PHP
 et les attributs de classe `#[RouteGroup]`.
 
