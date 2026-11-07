@@ -46,7 +46,7 @@ $router->map(Route::post('/upload-check', static function (FileRequestInterface 
         ];
         try {
             $file->moveTo($destination . '-again');
-        } catch (\\Mithridatem\\Routing\\Exception\\FileUploadException) {
+        } catch (\Mithridatem\Routing\Exception\FileUploadException) {
             $result['secondMoveRejected'] = true;
         }
         return json_encode($result, JSON_THROW_ON_ERROR);
