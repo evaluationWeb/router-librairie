@@ -21,6 +21,12 @@ final class RouteGroup
 
     public function __construct(private Router $router, private string $prefix) {}
 
+    /**
+     * Default grants inherited only by routes without explicit grants.
+     *
+     * SECURITY: non-empty route-specific grants REPLACE these group grants;
+     * they do not add an AND condition. See docs/route-groups.md.
+     */
     public function grants(array $grants): self
     {
         $this->grants = $grants;
